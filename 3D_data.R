@@ -1,5 +1,4 @@
 
-
 N <- 400
 kappa0 <- c(85, 170, 275)
 p = 3
@@ -24,8 +23,6 @@ cluster <- factor(c(rep(1, nrow(X1)),
                     rep(4, nrow(X4))))
 
 # Use scatterplot3d #
-dim(X)
-length(cluster)
 library(scatterplot3d)
 par(mfrow = c(1,1))
 scatterplot3d(X[,2], X[,3], X[,4], color=as.numeric(cluster),
@@ -36,7 +33,7 @@ legend("topright", legend = paste("Cluster", 1:4), col = 1:4, pch = 19)
 # Use plotly #
 library(plotly)
 par(mfrow = c(1,1))
-fig <- plot_ly(x = X[,2], y = X[,3], z = X[,4], color = cluster, colors = c('#FF0000', '#00FF00', '#0000FF', '#FFFF00')) %>%
+fig <- plot_ly(x = X[,2], y = X[,3], z = X[,4], color = cluster, colors = c('red', 'blue', 'green', 'yellow')) %>%
   add_markers() %>%
   layout(scene = list(xaxis = list(title = 'Dimension 1'),
                       yaxis = list(title = 'Dimension 2'),
@@ -90,11 +87,13 @@ for (j in 1:J){
   }
 }
 
+#### Plot AUC ####
+
 ###### Visualize fitted values in 3D #######
 if (J == 4){
   Xbeta_plot <- plot_ly(x = mean_Xbeta[,1], y = mean_Xbeta[,2], z = mean_Xbeta[,3], 
                         color = cluster, 
-                        colors = c('#FF0000', '#00FF00', '#0000FF', '#FFFF00')) %>%
+                        colors = c('red', 'blue', 'green', 'yellow')) %>%
     add_markers() %>%
     layout(scene = list(xaxis = list(title = 'Dimension 1'),
                         yaxis = list(title = 'Dimension 2'),
