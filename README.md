@@ -6,7 +6,10 @@ The main function is called bcmlr. The current version of bcmlr returns a list o
 - MLR probabilities of success, and
 - auxiliary Polya-Gamma variables.
 
-      The bcmlr function is under refinement. 
+> [!IMPORTANT]
+> This repository is still under construction as the bcmlr function is under refinement. 
+
+
 
 # Setup and run bcmlr
 - Download the PGDensity package
