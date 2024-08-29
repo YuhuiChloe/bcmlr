@@ -22,7 +22,8 @@ library(knitr) # for printing beta matrix using kable()
 ####################################################################################
 # bcmlr <- function(data, T.set, P, beta, kappa, omega, X, N, L, J, m0, V0inv) 
 
-bcmlr <- function(data){
+bcmlr <- function(data,  num_CP = 3, num_temper = 30, num_iter = 10000,  num_warmup = 5000,   num_cores = detectCores()/2){
+  
   
   #####################
   # Utility functions # 
@@ -218,18 +219,8 @@ bcmlr <- function(data){
   
   
   
+
   
-  
-  
-  
-  
-  
-  
-  num_CP = 3
-  num_temper = 30
-  num_iter = 10000
-  num_warmup = 5000
-  num_cores = detectCores()/2
   
   # X = as.matrix(data)  
   N = dim(X)[1] # Sample size
