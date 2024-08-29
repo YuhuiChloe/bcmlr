@@ -19,31 +19,27 @@ X <- cbind(rep(1, N), X)
 dim(X)
 
 
+##### 3D Data Visualization ######
 
-
-##### Use scatterplot3d #####
 cluster <- factor(c(rep(1, nrow(X1)),
                     rep(2, nrow(X2)),
                     rep(3, nrow(X3)),
                     rep(4, nrow(X4))))
+
+# Use scatterplot3d #
 dim(X)
 length(cluster)
 library(scatterplot3d)
 par(mfrow = c(1,1))
-# Assuming X1, X2, X3, X4 are your four dimensions
-scatterplot3d(X[,1], X[,2], X[,3], color=as.numeric(cluster),
+scatterplot3d(X[,2], X[,3], X[,4], color=as.numeric(cluster),
               pch=19, xlab="Dimension 1", ylab="Dimension 2", zlab="Dimension 3",
               main="3D Scatter Plot of data X")
 legend("topright", legend = paste("Cluster", 1:4), col = 1:4, pch = 19)
 
-##### Use plotly ######
+# Use plotly #
 library(plotly)
-cluster <- factor(c(rep(1, nrow(X1)),
-                    rep(2, nrow(X2)),
-                    rep(3, nrow(X3)),
-                    rep(4, nrow(X4))))
-# Create 3D scatter plot
-fig <- plot_ly(x = X[,1], y = X[,2], z = X[,3], color = cluster, colors = c('#FF0000', '#00FF00', '#0000FF', '#FFFF00')) %>%
+par(mfrow = c(1,1))
+fig <- plot_ly(x = X[,2], y = X[,3], z = X[,4], color = cluster, colors = c('#FF0000', '#00FF00', '#0000FF', '#FFFF00')) %>%
   add_markers() %>%
   layout(scene = list(xaxis = list(title = 'Dimension 1'),
                       yaxis = list(title = 'Dimension 2'),
@@ -52,9 +48,6 @@ fig <- plot_ly(x = X[,1], y = X[,2], z = X[,3], color = cluster, colors = c('#FF
 print(fig)
 
 
-X = as.matrix(X) 
-dim(X)
-
 
 ######### Run the bcmlr function ########
 out = bcmlr(data = X)
@@ -62,9 +55,6 @@ out = bcmlr(data = X)
 
 
 ###### Results #######
-runningtime = end - start
-paste("The algorithm took ", format(runningtime), "to run ", 
-      num_iter, "iterations, including ", num_warmup, "burn-in iterations.")
 
 
 # Compute and print the mean coefficients (under tempering power 1)
@@ -72,7 +62,6 @@ mean_beta = apply(X=out$Beta, MARGIN=c(2,3), FUN=mean)
 row_names <- paste("Beta", 1:nrow(mean_beta), sep = " ")
 col_names <- paste("Class", 1:ncol(mean_beta), sep = " ")
 dimnames(mean_beta) <- list(row_names, col_names)
-
 kable(mean_beta, caption = "Posterior mean coefficients")
 
 
@@ -80,6 +69,7 @@ mean_Xbeta = X%*%mean_beta # Fitted values (linear) based on the posterior mean 
 
 mean_P = apply(out$P, MARGIN = c(2,3), FUN = mean)   # Posterior mean probabilities of success
 
+###### Plots of the probabilities, fitted values, and change points #######
 J = 4
 L = J-1
 num_iter = 10000
@@ -103,6 +93,7 @@ for (j in 1:J){
   }
 }
 
+###### Visualize fitted values in 3D #######
 if (J == 4){
   Xbeta_plot <- plot_ly(x = mean_Xbeta[,1], y = mean_Xbeta[,2], z = mean_Xbeta[,3], 
                         color = cluster, 
