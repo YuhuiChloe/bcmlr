@@ -1,7 +1,4 @@
-# data(wine)
-# str(wine)
-# 
-# data(heartdisease)
+
 
 N <- 400
 kappa0 <- c(85, 170, 275)
