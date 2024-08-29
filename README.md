@@ -1,4 +1,4 @@
-# Bayesian Changepoint Detection via Multinomial Logistic Regression 
+# Bayesian Multiple Changepoint Detection via Multinomial Logistic Regression 
 
 The main function is called bcmlr. The current version of bcmlr returns a list of posterior samples of 
 - multiomial logistic regresion (MLR) coefficients,
