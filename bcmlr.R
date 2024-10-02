@@ -3,8 +3,15 @@
 # bcmlr fits single or multiple changepoints (CPs), finds an optimal tempering schedule (if fitting multiple CPs)
 # and returns an output list including posterior samples of change points and regression coefficients
 ###################################################################################################################
-
-bcmlr <- function(data, num_iter, num_warmup, num_temper, num_CP,  num_tune, pc_cores = detectCores()/2){
+# Input data needs to be in a matrix form.
+# num_CP: the number of change points to fit
+# num_tune: determine the number of tuning iterations needed to adaptively find an optimal tempering schedule
+# num_temper: the number of tempering powers = the tempering schedule length
+# num_iter: number of iterations
+# num_warmup: number of burn-in 
+# (num_iter - num_warmup = the number of mcmc samples)
+# pc_cores: the number of cores used for parallel computing
+bcmlr <- function(data, num_iter = 10000, num_warmup = 5000, num_temper = 40, num_CP,  num_tune = 5000, pc_cores = detectCores()/2){
   
   # We can print a warning to users if input data is not a matrix or have NA values
   # X = as.matrix(data)  
