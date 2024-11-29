@@ -1,27 +1,40 @@
-bcmlr <- function(data, num_iter = 10000, num_warmup = 5000, init_CP = NA, num_CP,thinning, print_outputs = TRUE){
+#Held-out strategy:
+#- Hold out every samples at indices multiple of 3 (thinning = 3) when fitting bclr.  
+#- Use the held-out data to compute AUC. 
 
+bcmlr <- function(data, num_iter = 10000, num_warmup = 5000, init_CP = NA, num_CP, thinning, print_outputs = TRUE){
+  
+  # a function to center a matrix by a vector of means
+  center <- function(x, m){
+    for (i in 1:ncol(x)){
+      x[,i] = x[,i] - m[i]
+    }
+    return(x)
+  }
+  
   X = as.matrix(data)
   if (anyNA(init_CP) == FALSE && length(init_CP) != num_CP){
-    print("initial changepoints must have the same length with the number of changepoints")
+    stop("initial changepoints must have the same length with the number of changepoints")
+  }
+  if (length(thinning) > 2 || thinning < 1){
+    stop("thinning must be a positive integer no less than 1")
   }
   
-  if (length(thinning) >2 || thinning < 1){
-    print("thinning must be a positive integer no less than 1")
-    break
-  }
-  
+  n = nrow(X)
   if (thinning != 1){
-    X_auc = X[seq_len(nrow(X)) %% thinning == 0, ] # rows of X selected to calculate AUC
-    X_auc = scale(X_auc, center = TRUE, scale = FALSE)
-    X = X[seq_len(nrow(X)) %% thinning != 0, ] # rows of X selected to fit bclr 
-    X = scale(X, center = TRUE, scale = FALSE)
+    X_auc = X[seq_len(n) %% thinning == 0, ] # rows of X selected to calculate AUC
+    X = X[seq_len(n) %% thinning != 0, ] # rows of X selected to fit bclr 
+    m = colMeans(X) # column means in the subseries used to fit the model
+    X = center(X, m) # center the subseries used to fit the model with its column means
+    X_auc = center(X_auc, m) # center the held-out samples with the same column means 
   }else{
-    X_auc = scale(X, center = TRUE, scale = FALSE)  # rows of X selected to calculate AUC
-    X = scale(X, center = TRUE, scale = FALSE) # rows of X selected to fit bclr 
+    m = colMeans(X)
+    X = center(X,m)
+    X_auc = X
   }
   
-  N = dim(X)[1] # Sample size
-  p = dim(X)[2] # data dimension
+  N = dim(X)[1] # Sample size of the subseries used to fit the data
+  p = dim(X)[2] # data dimension 
   
   
   ### Functions used for both cases (single CP and multiple CPs) ####
@@ -191,6 +204,7 @@ bcmlr <- function(data, num_iter = 10000, num_warmup = 5000, init_CP = NA, num_C
       }
     }
     
+    ######### Compute AUC ######
     # "ratios" are the probabilities of a subject belonging to 
     # class j+1 other than class j
     X_all = as.matrix(data)
@@ -301,13 +315,40 @@ bcmlr <- function(data, num_iter = 10000, num_warmup = 5000, init_CP = NA, num_C
   omega = matrix(0, nrow = N, ncol = J)
   P = matrix(0, nrow = N, ncol = J)
   if (anyNA(init_CP)){
+    # if initial CPs are NAs, use the even points as initial
     kappa = rep(0, L)
     for (l in 1:L){
       kappa[l] = round(N/J) *l
     }
   }else{
-    kappa = round(init_CP/n*N)
+    if (thinning == 1){
+      kappa = which(thin_idx == init_CP) 
+    }else{
+      kappa = c()
+      # time points selected to fit the model
+      thin_idx = seq_len(n)[seq_len(n) %% thinning != 0]
+      for (k in init_CP){
+        if (k %in% thin_idx){
+          # if the initial CP is selected to fit the model, use it as is. 
+          kappa = c(kappa, which(thin_idx == k))
+        }else{
+          # if the initial CP is not selected to fit the model, 
+          # pick the point closest before the initial CP in the selected points. 
+          left_pts = thin_idx[thin_idx<k]
+          if(length(left_pts)>0){
+            kappa = c(kappa, which(thin_idx == max(left_pts)))
+          }else{
+            # if there's not points to the left of the initial CP, 
+            # (print a warning and) choose the middle point as initial.
+            # print("no points before the initial CP")
+            kappa =round(N/J) *l
+          }
+        }
+      }
+
+    }
   }
+  print(c(N, kappa))
 
   out = list() # An output list
   out$Kappa = matrix(data = rep(0, times = (num_iter-num_warmup)*L), nrow = num_iter-num_warmup, ncol = L)
