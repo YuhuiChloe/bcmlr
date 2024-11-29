@@ -322,7 +322,7 @@ bcmlr <- function(data, num_iter = 10000, num_warmup = 5000, init_CP = NA, num_C
     }
   }else{
     if (thinning == 1){
-      kappa = which(thin_idx == init_CP) 
+      kappa = init_CP 
     }else{
       kappa = c()
       # time points selected to fit the model
