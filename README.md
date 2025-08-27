@@ -13,7 +13,7 @@ The bcmlr function gives the options to
 - tempering: default to 1. It is only used when implementing non-reversible parallel tempering (Notation in the paper supplement: $t$)
 - thinning: default at 1. It leads to how much data is held out (Notation in the paper: $\zeta$)
 - min_size: mininum segment length, default at 30. (Notation in the paper: $m$)
-- sd_beta: standard deviation in the prior for regression coefficients, default at 3. (Related notation in the paper:$\boldsymbol{V}_0$, covaraince matrix)
+- sd_beta: standard deviation in the prior for regression coefficients, default at 3. (Related notation in the paper:$V_0$, covaraince matrix)
 
 # Outputs of the bcmlr_model_select function: 
 - Kappa: posterior modes of the changepoint distribution (Notation in the paper: $\kappa$)
