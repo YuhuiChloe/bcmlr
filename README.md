@@ -1,8 +1,8 @@
 # A generalized Bayesian approach to multiple changepoint analysis
 
 The bcmlr function gives the options to 
-- 1) detect a fixed number of changepoints when the number of changes is known OR
-- 2) detect the number of changes when the number of changes is unknown. When the number of changes is unknown, one needs to use the bcmlr_model_select function that fits bcmlr to first detect the number of changes and generates posterior samples for posterior inference. 
+- detect a fixed number of changepoints when the number of changes is known OR
+- detect the number of changes when the number of changes is unknown. When the number of changes is unknown, one needs to use the bcmlr_model_select function that fits bcmlr to first detect the number of changes and generates posterior samples for posterior inference. 
 
 # Main arguments in the bcmlr or bcmlr_model_select functions: 
 - data: A data frame or matrix with numerical entries
