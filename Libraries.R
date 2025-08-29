@@ -1,7 +1,6 @@
 library(BayesLogit) # for rpg()
 library(MASS) # for mvrnorm()
-library(PGdensity) # for PG density (users need to pre-download this package)
-library(parallel) # for parallel computing using mclapply()
+library(parallel) # for parallel computing using mclapply() ---- Use this when you want to run bcmlr on independent data sets in parallel
 library(pdfCluster) # for computing Adjusted Rand Index
 library(pracma) # for computing the Hausdorff distance
 library(ecp) # The ecp packaeg includes E.divisive
@@ -12,4 +11,8 @@ np <- import("numpy")
 library(glmnet)
 library(pROC) # for ROC curves and AUC values
 options(pROCProgress = list(name = "none")) # Disable pROC progress bar globally
+
+# In the bclr and bcmlr Gibbs samplers, we only need rpg() function to simulate the Polya Gamma variables. Rpg( ) is in BayesLogit. 
+# We need to load PGdensity if we use parallel tempering. In the Metropolis-Hastings steps of parallel tempering, we need to compute the posterior, and that's where we need to use functions from PGdensity. 
+library(PGdensity) # for PG density --- Users need to install this package following the steps in PGdensity/README.md. 
 library(splines) # for monotone interpolation used in bcmlr-parallel tempering
