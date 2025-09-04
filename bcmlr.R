@@ -2,9 +2,17 @@ bcmlr <- function(data, num_CP, init = "even", prior = "Gaussian", alpha_f = 0.1
                   min_size = 30, sd_beta = 3, tempering = 1, thinning = 1, 
                   num_iter = 5000, num_warmup = 2500, print_outputs = FALSE, 
                   print_progress = FALSE, model_selection = FALSE){
-  #### convert min_size ####
+  #### Convert min_size ####
   if (thinning != 1){
     min_size = round(min_size*(1 - 1/thinning))
+  }
+  #### Min size warning ####
+  if (thinning >= min_size){
+    stop("The minimum segment length (min_size) should be greater than the reciprocal of the held-out fraction (thinning).")
+  }
+  #### NA/infinity warning ####
+  if (anyNA(data) || any(is.infinite(unlist(data)))){
+    stop("NAs or infinity exist in the input data.")
   }
   #### Check edge-cases ####
   if (length(thinning) > 2 || thinning < 1){
@@ -12,6 +20,9 @@ bcmlr <- function(data, num_CP, init = "even", prior = "Gaussian", alpha_f = 0.1
   }
   if (init != "even" && init != "kcp" && init != "ecp" && init != "multirank"){
     print("Initialization must be one of these: 'even', 'kcp', 'ecp', 'multirank'")
+  }
+  if (thinning > min_size){
+    stop("Mininum segment length being smaller than thinning may cause ")
   }
   #### Center & standardize the data ####
   # A function to center & standardize a matrix x
