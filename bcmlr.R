@@ -19,7 +19,7 @@ bcmlr <- function(data, num_CP, init = "even", prior = "Gaussian", alpha_f = 0.1
     stop("thinning must be a positive integer no less than 1")
   }
   if (init != "even" && init != "kcp" && init != "ecp" && init != "multirank"){
-    print("Initialization must be one of these: 'even', 'kcp', 'ecp', 'multirank'")
+    stop("Initialization must be one of these: 'even', 'kcp', 'ecp', 'multirank'")
   }
   if (thinning > min_size){
     stop("Mininum segment length being smaller than thinning may cause ")
@@ -43,25 +43,38 @@ bcmlr <- function(data, num_CP, init = "even", prior = "Gaussian", alpha_f = 0.1
     X_auc = X_all[holdout_idx, , drop = FALSE] # rows of X selected to calculate AUC
     X = X_all[-holdout_idx, , drop = FALSE] # rows of X selected to fit the model  
     if (ncol(X) == 1){
-      m = mean(X)
+      m = mean(X, na.rm = TRUE)
     }else{
-      m = colMeans(X) # column means in the training set
+      m = colMeans(X, na.rm = TRUE) # column means in the training set
     }
     sdv = apply(X, 2, FUN = sd) # standard deviation of the training set
+    sdv[sdv == 0] = 1 # Avoid divide-by-zero in standardization: sdv = 0 could occur if the input data has a column of the same constant. 
     X = center_standardize(X, m, sdv) # center & standardize the subseries used to fit the model with its column means
     X_auc = center_standardize(X_auc, m, sdv) # center & standardize the held-out samples with the same column means
+    # Update the original data set with the centered-standardized X and X_auc
+    X_all[holdout_idx,] = X_auc
+    X_all[train_idx,] = X
+    # Quick sanity checks: make sure all the indices match 
+    stopifnot(
+      nrow(X_auc) == length(holdout_idx),
+      nrow(X)     == length(train_idx),
+      isTRUE(all.equal(X_all[holdout_idx, ], X_auc)),
+      isTRUE(all.equal(X_all[train_idx, ], X))
+    )
   }else{
     all_idx = seq_len(n)
     holdout_idx = all_idx 
     train_idx = all_idx
     if (dim(X_all)[2] == 1){
-      m = mean(X_all)
+      m = mean(X_all, na.rm = TRUE)
     }else{
-      m = colMeans(X_all) # column means in the training set
+      m = colMeans(X_all, na.rm = TRUE) # column means in the training set
     }
     sdv = apply(X_all, 2, FUN = sd)
+    sdv[sdv == 0] = 1 # Avoid divide-by-zero in standardization: sdv = 0 could occur if the input data has a column of the same constant. 
     X = center_standardize(X_all, m, sdv)
-    X_auc = X_all
+    X_all = X
+    # No need for X_auc since we are not computing AUCs for model selection
   }
   N = dim(X)[1] # Sample size of training set
   p = dim(X)[2] # Dimension of the training set
@@ -185,15 +198,15 @@ bcmlr <- function(data, num_CP, init = "even", prior = "Gaussian", alpha_f = 0.1
         kappa[j] <- sample(x=range, size=1, prob=prob_vec) # update kappa
       }
     }
-    ### Compute AUC 
-    # "ratios" are the probabilities of a subject belonging to
-    # class j+1 other than class j
-    Phi_exp_all <- exp(X_all %*% beta) # Element-wise exponent of Phi matrix from supplement
-    P_all <- t(apply(Phi_exp_all, 1, function(x) x/sum(x))) # Normalize the rows of Phi_exp to get P
-    original_kappa = train_idx[kappa]
+    # Update kappa in the scale of the entire series
+    original_kappa = train_idx[kappa] 
+    #### Compute AUC for model selection ####
     if (model_selection){
+      # "ratios" are the probabilities of a subject belonging to
+      # class j+1 other than class j
+      Phi_exp_all <- exp(X_all %*% beta) # Element-wise exponent of Phi matrix from supplement
+      P_all <- t(apply(Phi_exp_all, 1, function(x) x/sum(x))) # Normalize the rows of Phi_exp to get P
       Y_all <- kappa_to_Y(original_kappa, n, L)
-      #auc_ci_lb = rep(0, times = J-1) 
       ci = matrix(0, nrow = J-1, ncol = 3) # each row has a LB, point estimate, and UB
       for (j in 1:(J-1)){
         if(j == 1){
