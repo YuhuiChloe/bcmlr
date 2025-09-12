@@ -2,13 +2,13 @@ bcmlr <- function(data, num_CP, init = "even", prior = "Gaussian", alpha_f = 0.1
                   min_size = 30, sd_beta = 3, tempering = 1, thinning = 1, 
                   num_iter = 5000, num_warmup = 2500, print_outputs = FALSE, 
                   print_progress = FALSE, model_selection = FALSE){
-  #### Convert min_size ####
-  if (thinning != 1){
-    min_size = round(min_size*(1 - 1/thinning))
-  }
   #### Min size warning ####
   if (thinning >= min_size){
     stop("The minimum segment length (min_size) should be greater than the reciprocal of the held-out fraction (thinning).")
+  }
+  #### Convert min_size ####
+  if (thinning != 1){
+    min_size = round(min_size*(1 - 1/thinning))
   }
   #### NA/infinity warning ####
   if (anyNA(data) || any(is.infinite(unlist(data)))){
@@ -369,8 +369,7 @@ bcmlr <- function(data, num_CP, init = "even", prior = "Gaussian", alpha_f = 0.1
     # END of the for-loop #
     # Use posterior modes as changepoint estimates
     cp = table(out$Kappa)
-    kappa_mode = as.integer(names(cp)[which.max(cp)]) # posterior mode 
-    out$Kappa = kappa_mode
+    out$kappa_mode = as.integer(names(cp)[which.max(cp)]) # posterior mode 
     if (model_selection){
       out$init_cp = NULL
       out$P = NULL
@@ -477,7 +476,7 @@ bcmlr <- function(data, num_CP, init = "even", prior = "Gaussian", alpha_f = 0.1
       kappa = as.integer(names(cp)[which.max(cp)])
       cps = c(cps, kappa)
     }
-    out$Kappa = cps # posterior modes
+    out$Kappa_mode = cps # posterior modes
     if (model_selection){
       out$init_cp = NULL
       out$P = NULL
