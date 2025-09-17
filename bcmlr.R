@@ -47,20 +47,24 @@ bcmlr <- function(data, num_CP, init = "even", prior = "Gaussian", alpha_f = 0.1
     }else{
       m = colMeans(X, na.rm = TRUE) # column means in the training set
     }
-    sdv = apply(X, 2, FUN = sd) # standard deviation of the training set
+    sdv = apply(X, 2, FUN = sd, na.rm = TRUE) # standard deviation of the training set
     sdv[sdv == 0] = 1 # Avoid divide-by-zero in standardization: sdv = 0 could occur if the input data has a column of the same constant. 
     X = center_standardize(X, m, sdv) # center & standardize the subseries used to fit the model with its column means
     X_auc = center_standardize(X_auc, m, sdv) # center & standardize the held-out samples with the same column means
     # Update the original data set with the centered-standardized X and X_auc
-    X_all[holdout_idx,] = X_auc
-    X_all[train_idx,] = X
-    # Quick sanity checks: make sure all the indices match 
+    if (length(holdout_idx) > 0) { X_all[holdout_idx, ] <- X_auc }
+    if (length(train_idx)   > 0) { X_all[train_idx,   ] <- X }
+    # sanity checks
     stopifnot(
       nrow(X_auc) == length(holdout_idx),
-      nrow(X)     == length(train_idx),
-      isTRUE(all.equal(X_all[holdout_idx, ], X_auc)),
-      isTRUE(all.equal(X_all[train_idx, ], X))
+      nrow(X)     == length(train_idx)
     )
+    if (length(holdout_idx) > 0) {
+      stopifnot(isTRUE(all.equal(X_all[holdout_idx, , drop = FALSE], X_auc)))
+    }
+    if (length(train_idx) > 0) {
+      stopifnot(isTRUE(all.equal(X_all[train_idx,   , drop = FALSE], X)))
+    }
   }else{
     all_idx = seq_len(n)
     holdout_idx = all_idx 
@@ -370,6 +374,7 @@ bcmlr <- function(data, num_CP, init = "even", prior = "Gaussian", alpha_f = 0.1
     # Use posterior modes as changepoint estimates
     cp = table(out$Kappa)
     out$kappa_mode = as.integer(names(cp)[which.max(cp)]) # posterior mode 
+    out$Kappa = kappa_mode
     if (model_selection){
       out$init_cp = NULL
       out$P = NULL
