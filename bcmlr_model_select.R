@@ -1,6 +1,9 @@
 bcmlr_model_select <- function(data, init, thinning, prior, alpha_f = 0.1, threshold = 0.5, min_size = 30, 
                                max_num_cp = 5, num_iter = 5000, num_warmup = 2500, print_progress = FALSE){
-  if (max_num_cp > (dim(data)[1]/min_size -1)){
+  if (!is.matrix(data)){
+    stop("Please convert your data to a matrix.")
+  }
+  if (max_num_cp > (dim(as.matrix(data))[1]/min_size -1)){
     stop("The value of max_num_cp exceeded the maximum possible number of changepoints under the specified min_size.")
   }
   # Select the number of changepoints
