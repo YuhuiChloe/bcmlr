@@ -4,7 +4,7 @@ bcmlr <- function(data, num_CP, init = "even", prior = "Gaussian", alpha_f = 0.1
                   print_progress = FALSE, model_selection = FALSE){
   #### Min size warning ####
   if (thinning >= min_size){
-    stop("The minimum segment length (min_size) should be greater than the reciprocal of the held-out fraction (thinning).")
+    stop("The minimum segment length (min_size) should be greater than the reciprocal of the held-out fraction (thinning). We recommend min_size = 2*thinning.")
   }
   #### Convert min_size ####
   if (thinning != 1){
@@ -373,8 +373,7 @@ bcmlr <- function(data, num_CP, init = "even", prior = "Gaussian", alpha_f = 0.1
     # END of the for-loop #
     # Use posterior modes as changepoint estimates
     cp = table(out$Kappa)
-    out$kappa_mode = as.integer(names(cp)[which.max(cp)]) # posterior mode 
-    out$Kappa = kappa_mode
+    out$Kappa_mode = as.integer(names(cp)[which.max(cp)]) # posterior mode 
     if (model_selection){
       out$init_cp = NULL
       out$P = NULL
@@ -488,7 +487,7 @@ bcmlr <- function(data, num_CP, init = "even", prior = "Gaussian", alpha_f = 0.1
       out$Beta = NULL
     }else{
       # Compute posterior mean coefficients
-      out$Beta = apply(out$Beta, c(2,3), mean)
+      out$Beta_mean = apply(out$Beta, c(2,3), mean)
       out$P = apply(out$P, c(2,3), mean)
       out$AUC = NULL # no need for AUC if we are not doing model selection
       out$init_cp = NULL
