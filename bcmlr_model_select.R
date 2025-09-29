@@ -1,7 +1,7 @@
 bcmlr_model_select <- function(data, init, thinning, prior, alpha_f = 0.1, threshold = 0.5, min_size = 30, 
                                max_num_cp = 5, num_iter = 5000, num_warmup = 2500, print_progress = FALSE){
   if (!is.matrix(data)){
-    stop("Please convert your data to a matrix.")
+    stop("Please convert your data to a matrix. If you have factor variables, apply a dummification or one-hot encoding.")
   }
   if (max_num_cp > (dim(as.matrix(data))[1]/min_size -1)){
     stop("The value of max_num_cp exceeded the maximum possible number of changepoints under the specified min_size.")
@@ -20,7 +20,7 @@ bcmlr_model_select <- function(data, init, thinning, prior, alpha_f = 0.1, thres
     print("There is no change.")
     out = list()
     out$num_cp = num_cp # estimate of the number of CPs 
-    out$max_cps = old_out$Kappa # the max number of CPs from the "old output" before refitting on all the data
+    out$max_cps = old_out$Kappa_mode # the max number of posterior modes from the "old output" before refitting on all the data
     out$num_cp_dist = rej # posterior distribution of the number of CPs
     out$probs_num_cp = probs 
   }else{
@@ -28,7 +28,7 @@ bcmlr_model_select <- function(data, init, thinning, prior, alpha_f = 0.1, thres
     out = bcmlr(data, init = init, num_CP = num_cp, prior = prior, thinning = 1, min_size = min_size, num_iter = num_iter, num_warmup = num_warmup,
                 print_outputs = FALSE, print_progress = print_progress, model_selection = FALSE)
     out$num_cp = num_cp # estimate of the number of CPs 
-    out$max_cps = old_out$Kappa # the max number of CPs from the "old output" before refitting on all the data
+    out$max_cps = old_out$Kappa_mode # the max number of posterior modes from the "old output" before refitting on all the data
     out$num_cp_dist = rej # posterior distribution of the number of CPs
     out$probs_num_cp = probs 
   }
