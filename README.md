@@ -8,12 +8,13 @@ The bcmlr function gives the options to
 - data: A data frame or matrix with numerical entries
 - num_CP: The total number of changepoints the user anticipates (Notation in the paper: $k$)
 - init: initialization method (The default initialization is to place the changepoints at evenly spaced positions of the data series.)
-- prior: Choose "Gaussian" if you have low-dimensional data or "horseshoe" if you have high-dimensional data 
+- prior_beta: Choose "Gaussian" if you have low-dimensional data or "horseshoe" if you have high-dimensional data
+- prior_kappa: Choose "default" to use the prior (based on segment lengths) we recommend; Enter a function name if you want to use your function that takes in all possible changepoint locations and outputs a value of the joint  PMF of the prior distribution on the changepoints. 
 - alpha_f: default to 0.1. (1-alpha_f) is the confidence level o a frequentist confidence internval (Notation in the paper: $\alpha$)
 - tempering: default to 1. It is only used when implementing non-reversible parallel tempering (Notation in the paper supplement: $t$)
 - thinning: default at 1. It leads to how much data is held out (Notation in the paper: $\zeta$)
-- min_size: mininum segment length, default at 30. (Notation in the paper: $m$)
-- sd_beta: standard deviation in the prior for regression coefficients, default at 3. (Related notation in the paper:$V_0$, a covaraince matrix)
+- min_size: mininum segment length, default to 30. (Notation in the paper: $m$)
+- sd_beta: value (variance) on the diagonal of the covariance matrix for regression coefficients, default to 3. (Related notation in the paper:$V_0$, a covaraince matrix)
 
 # Outputs of the bcmlr_model_select function: 
 - Kappa: posterior modes of the changepoint distribution (Notation in the paper: $\kappa$)
