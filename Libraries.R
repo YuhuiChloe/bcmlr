@@ -1,4 +1,5 @@
 library(BayesLogit) # for rpg()
+library(LearnBayes) # for computing inverse gamma: rigamma(), alternative to 1/rgamma()
 library(MASS) # for mvrnorm()
 library(parallel) # for parallel computing using mclapply() ---- Use this when you want to run bcmlr on independent data sets in parallel
 library(pdfCluster) # for computing Adjusted Rand Index
