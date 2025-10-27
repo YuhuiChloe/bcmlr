@@ -105,25 +105,29 @@ bcmlr <- function(data, num_CP, init = "even", prior_beta = "Gaussian", prior_ka
     return(Y)
   }
   # A function that updates \beta, \kappa, and  \omega per iteration  #
-  GS_update <- function(temper, beta, kappa, omega, tau_sq, xi, nu, lambda, X_all, X, train_idx, holdout_idx, n, N, p, L, J, model_selection){
+  GS_update <- function(temper, beta, kappa, omega, tau_sq, xi, nu, lambda_sq, X_all, X, train_idx, holdout_idx, n, N, p, L, J, model_selection){
     # 0. Update Y, delta 
     Y = kappa_to_Y(kappa, N, L)
     delta = temper*(Y-1/2)
     # 1. Update HS prior (on beta) parameters & beta & omega
     if (prior_beta == "horseshoe"){
       # 1.1 Update HS priors
-      xi_inv <- rgamma(n=1, shape = 1, scale = 1+1/tau_sq)
-      xi <- 1/xi_inv
+      #xi = 1/rgamma(n=1, shape = 1, rate = 1+1/tau_sq)
+      xi = rigamma(n =1, a = 1, b = 1+1/tau_sq)
+      xi_inv = 1/xi
       for (j in 1:(J-1)){
-        tau_sq <- 1/rgamma(n=1, shape = 0.5*(p+1), scale =  xi_inv + 0.5*sum(beta[,j]^2 / lambda[,j]^2))
+       #tau_sq <- 1/rgamma(n=1, shape = 0.5*(p+1), rate = xi_inv + 0.5*sum(beta[,j]^2 / lambda_sq[,j])) 
+       tau_sq <- rigamma(n = 1, a = 0.5*(p+1), b = xi_inv + 0.5*sum(beta[,j]^2 / lambda_sq[,j]))
         for (d in 1:p){
-          nu[d,j] <- 1/rgamma(n=1, shape = 1, scale = 1+1/lambda[d,j]^2)
-          lambda[d,j] <- 1/rgamma(n=1, shape = 1, scale = 1/nu[d,j] + 0.5/tau_sq*beta[d,j]^2)
+          #nu[d,j] <- 1/rgamma(n=1, shape = 1, rate = 1+1/lambda_sq[d,j]^2)
+          nu[d,j] <- rigamma(n=1, a = 1, b = 1+1/lambda_sq[d,j])
+          #lambda_sq[d,j] <- 1/rgamma(n=1, shape = 1, rate = 1/nu[d,j] + 0.5/tau_sq*beta[d,j]^2)
+          lambda_sq[d,j] <- rigamma(n=1, a = 1, b = 1/nu[d,j] + 0.5/ tau_sq*beta[d,j]^2)
         }
       }
       # 1.2 Update beta and omega 
       for(j in 1:(J-1)){
-        Sigma0_j = diag(lambda[,j]^2*tau_sq, nrow = p, ncol = p) 
+        Sigma0_j = diag(lambda_sq[,j]*tau_sq, nrow = p, ncol = p) 
         # Polson et al. (2013) describes or implies the existence of matrices
         # C and eta. We compute these here. Can potentially use log-sum-exp trick
         # as described here:
@@ -281,12 +285,12 @@ bcmlr <- function(data, num_CP, init = "even", prior_beta = "Gaussian", prior_ka
     if (prior_beta == "horseshoe"){
       if (temper == 1){
         if (model_selection){
-          return( list(beta=beta, kappa=kappa, original_kappa=original_kappa, omega=omega, tau_sq = tau_sq, xi=xi, nu=nu, lambda=lambda, P=P, Auc=ci))
+          return( list(beta=beta, kappa=kappa, original_kappa=original_kappa, omega=omega, tau_sq = tau_sq, xi=xi, nu=nu, lambda_sq=lambda_sq, P=P, Auc=ci))
         }else{
-          return( list(beta=beta, kappa=kappa, original_kappa=original_kappa, omega=omega, tau_sq = tau_sq, xi=xi, nu=nu, lambda=lambda, P=P) )
+          return( list(beta=beta, kappa=kappa, original_kappa=original_kappa, omega=omega, tau_sq = tau_sq, xi=xi, nu=nu, lambda_sq=lambda_sq, P=P) )
         }
       }else{
-        return( list(beta=beta, kappa=kappa, original_kappa=original_kappa, omega=omega, tau_sq = tau_sq, xi=xi, nu=nu, lambda=lambda) )
+        return( list(beta=beta, kappa=kappa, original_kappa=original_kappa, omega=omega, tau_sq = tau_sq, xi=xi, nu=nu, lambda_sq=lambda_sq) )
       }
     }
     else if (prior_beta == "Gaussian"){
@@ -308,7 +312,7 @@ bcmlr <- function(data, num_CP, init = "even", prior_beta = "Gaussian", prior_ka
       xi = 1
       tau_sq = 1
       nu = rep(1, p)
-      lambda = rep(1, p)
+      lambda_sq = rep(1, p)
     }else if (prior_beta == "Gaussian"){
       m0 <- rep(0, times = p) # m0[,j] is the prior mean vector
       sd0 <- sd_beta # prior variance
@@ -341,14 +345,18 @@ bcmlr <- function(data, num_CP, init = "even", prior_beta = "Gaussian", prior_ka
       # 2. Update beta 
       # Update HS prior parameters 
       if (prior_beta =="horseshoe"){
-        xi_inv <- rgamma(n=1, shape = 1, scale = 1+1/tau_sq)
+        #xi_inv <- rgamma(n=1, shape = 1, rate = 1+1/tau_sq)
+        xi_inv <- rigamma(n=1, a = 1, b = 1+1/tau_sq)
         xi <- 1/xi_inv
-        tau_sq <- 1/rgamma(n=1, shape = 0.5*(p+1), scale =  xi_inv + 0.5*sum(beta^2 / lambda^2))
+        #tau_sq <- 1/rgamma(n=1, shape = 0.5*(p+1), rate =  xi_inv + 0.5*sum(beta^2 / lambda_sq))
+        tau_sq <- rigamma(n=1, a = 0.5*(p+1), b =  xi_inv + 0.5*sum(beta^2 / lambda_sq))
         for (d in 1:p){
-          nu[d] <- 1/rgamma(n=1, shape = 1, scale = 1+1/lambda[d]^2)
-          lambda[d] <- 1/rgamma(n=1, shape = 1, scale = 1/nu[d] + 0.5/tau_sq*beta[d]^2)
+          #nu[d] <- 1/rgamma(n=1, shape = 1, rate = 1+1/lambda_sq[d])
+          nu[d] <- rigamma(n=1, a = 1, b = 1+1/lambda_sq[d])
+          #lambda_sq[d] <- 1/rgamma(n=1, shape = 1, rate = 1/nu[d] + 0.5/tau_sq*beta[d]^2)
+          lambda_sq[d] <- rigamma(n=1, a = 1, b = 1/nu[d] + 0.5/tau_sq*beta[d]^2)
         }
-        Sigma0 = diag(lambda^2*tau_sq, nrow = p, ncol = p)
+        Sigma0 = diag(lambda_sq*tau_sq, nrow = p, ncol = p)
         delta = c(rep(-0.5, times = kappa), rep(0.5, times = N-kappa))
         Z <- matrix(rnorm(p), p, 1) # A p-vector of standard normals
         U <- chol(crossprod(x = X, y = diag(omega) %*% X) + Sigma0) # Upper Cholesky factor of the inverse of V_j
@@ -421,8 +429,8 @@ bcmlr <- function(data, num_CP, init = "even", prior_beta = "Gaussian", prior_ka
     }
     else{
       # Compute posterior mean coefficients
-      out$Beta = apply(out$Beta, 2, mean)
-      out$P = apply(out$P, 2, mean)
+      out$Beta_mean = apply(out$Beta, 2, mean)
+      out$P_mean = apply(out$P, 2, mean)
       out$AUC = NULL # no need for AUC if we are not doing model selection
       out$init_cp = NULL
     }
@@ -440,7 +448,7 @@ bcmlr <- function(data, num_CP, init = "even", prior_beta = "Gaussian", prior_ka
       xi = 1
       tau_sq = 1
       nu = matrix(1, nrow = p, ncol = J-1)
-      lambda = matrix(1, nrow = p, ncol = J-1)
+      lambda_sq = matrix(1, nrow = p, ncol = J-1)
     }else if (prior_beta == "Gaussian"){
       m0 <- array(data=0, dim=c(p,J-1)) # m0[,j] is the prior mean of the jth coef vec
       V0 <- array(data=0, dim=c(p,p,J-1)) # V0[,,j] is the prior cov. of the jth coef vec
@@ -484,7 +492,7 @@ bcmlr <- function(data, num_CP, init = "even", prior_beta = "Gaussian", prior_ka
     start = Sys.time()
     for (iter in 1:num_iter){
       # 1. Update samples
-      gs = GS_update(temper = tempering, beta, kappa, omega, tau_sq, xi, nu, lambda, X_all, X, train_idx, holdout_idx, n, N, p, L, J, model_selection)
+      gs = GS_update(temper = tempering, beta, kappa, omega, tau_sq, xi, nu, lambda_sq, X_all, X, train_idx, holdout_idx, n, N, p, L, J, model_selection)
       beta = gs$beta
       kappa = gs$kappa
       omega = gs$omega
@@ -495,7 +503,7 @@ bcmlr <- function(data, num_CP, init = "even", prior_beta = "Gaussian", prior_ka
         tau_sq = gs$tau_sq
         xi = gs$xi
         nu = gs$nu 
-        lambda = gs$lambda
+        lambda_sq = gs$lambda_sq
       }
       # 2. Store the samples in the current iteration
       if ( iter > num_warmup){
