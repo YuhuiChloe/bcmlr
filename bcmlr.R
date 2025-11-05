@@ -66,7 +66,7 @@ bcmlr <- function(data, num_CP, init = "even", prior_beta = "Gaussian", prior_ka
     if (length(train_idx) > 0) {
       stopifnot(isTRUE(all.equal(X_all[train_idx,   , drop = FALSE], X)))
     }
-  }else{ # if thinning = 1
+  }else if (thinning == 1){ # if thinning = 1
     all_idx = seq_len(n)
     holdout_idx = all_idx 
     train_idx = all_idx
@@ -105,7 +105,7 @@ bcmlr <- function(data, num_CP, init = "even", prior_beta = "Gaussian", prior_ka
     return(Y)
   }
   # A function that updates \beta, \kappa, and  \omega per iteration  #
-  GS_update <- function(temper, beta, kappa, omega, tau_sq, xi, nu, lambda_sq, X_all, X, train_idx, holdout_idx, n, N, p, L, J, model_selection){
+  GS_update <- function(temper, beta, kappa, omega, tau_sq, xi, nu, lambda_sq, X_all, X, train_idx, holdout_idx, n, N, p, L, J, V0inv, V0, model_selection){
     # 0. Update Y, delta 
     Y = kappa_to_Y(kappa, N, L)
     delta = temper*(Y-1/2)
@@ -137,11 +137,27 @@ bcmlr <- function(data, num_CP, init = "even", prior_beta = "Gaussian", prior_ka
         for(i in 1:N){
           omega[i,j] <- rpg(num=1, h = temper, z = eta_j[i]) # update omega
         }
-        # Using Cholesky is more efficient than brute-force computation including direct matrix inverse using solve()
-        # a term like "Sigma0_j %*% m0_j" is omitted because the prior mean term is zero. 
-        Z <- matrix(rnorm(p), p, 1) # A p-vector of standard normals
-        U <- chol(crossprod(x = X, y = diag(omega[,j]) %*% X) + Sigma0_j) # Upper Cholesky factor of the inverse of V_j
-        beta[,j] <- chol2inv(U) %*% (t(X) %*% (delta[,j] + diag(omega[,j]) %*% c_j)) + backsolve(U, Z)
+        if (p<= N){ # Low-dimensional 
+          # Using Cholesky is more efficient than brute-force computation including direct matrix inverse using solve()
+          # a term like "Sigma0_j %*% m0_j" is omitted because the prior mean m0_j term is zero. 
+          Z <- matrix(rnorm(p), p, 1) # A p-vector of standard normals
+          U <- chol(crossprod(x = X, y = diag(omega[,j]) %*% X) + Sigma0_j) # Upper Cholesky factor of the inverse of V_j
+          beta[,j] <- chol2inv(U) %*% (t(X) %*% (delta[,j] + diag(omega[,j]) %*% c_j)) + backsolve(U, Z)
+        }else if (p>N){# High-dimensional 
+          D = diag(1/(lambda_sq[,j]*tau_sq), nrow = p, ncol = p) 
+          Phi = diag(sqrt(omega[,j]))%*%X
+          alpha_s = diag(sqrt(omega[,j]))%*%c_j + diag(sqrt(1/omega[,j]))%*%delta[,j]
+          # Step 1. 
+          u = mvrnorm(n = 1, mu = rep(0, p), Sigma = D)
+          e = mvrnorm(n = 1, mu = rep(0, N), Sigma = diag(N))
+          # Step 2.
+          v = Phi%*%u + e
+          # Step 3.
+          U = chol(crossprod(x = t(Phi), y = D%*%t(Phi)) + diag(N))
+          w = chol2inv(U)%*%(alpha_s-v) # N by 1
+          # Step 4.
+          beta[,j] = u + D%*%t(Phi)%*%w 
+        }
       }
     }else if (prior_beta == "Gaussian"){
       # 1.1 Update beta and omega 
@@ -151,9 +167,25 @@ bcmlr <- function(data, num_CP, init = "even", prior_beta = "Gaussian", prior_ka
         for(i in 1:N){
           omega[i,j] <- rpg(num=1, h = temper, z = eta_j[i]) # update omega
         }
-        Z <- matrix(rnorm(p), p, 1) # A p-vector of standard normals
-        U <- chol(crossprod(x = X, y = diag(omega[,j]) %*% X) + V0inv[,,j]) # Upper Cholesky factor of the inverse of V_j
-        beta[,j] <- chol2inv(U) %*% (t(X) %*% (delta[,j] + diag(omega[,j]) %*% c_j) + V0inv[,,j] %*% m0[,j]) + backsolve(U, Z)
+        if (p<=N){
+          Z <- matrix(rnorm(p), p, 1) # A p-vector of standard normals
+          U <- chol(crossprod(x = X, y = diag(omega[,j]) %*% X) + V0inv[,,j]) # Upper Cholesky factor of the inverse of V_j
+          beta[,j] <- chol2inv(U) %*% (t(X) %*% (delta[,j] + diag(omega[,j]) %*% c_j) + V0inv[,,j] %*% m0[,j]) + backsolve(U, Z)
+        }else if (p>N){
+          D = V0[,,j]
+          Phi = diag(sqrt(omega[,j]))%*%X
+          alpha_s = diag(sqrt(omega[,j]))%*%c_j + diag(sqrt(1/omega[,j]))%*%delta[,j]
+          # Step 1. 
+          u = mvrnorm(n = 1, mu = rep(0, p), Sigma = D)
+          e = mvrnorm(n = 1, mu = rep(0, N), Sigma = diag(N))
+          # Step 2.
+          v = Phi%*%u + e
+          # Step 3.
+          U = chol(crossprod(x = t(Phi), y = D%*%t(Phi)) + diag(N))
+          w = chol2inv(U)%*%(alpha_s-v) # N by 1
+          # Step 4.
+          beta[,j] = u + D%*%t(Phi)%*%w 
+        }
       }
     }
     # 3. Update kappa 
@@ -342,30 +374,63 @@ bcmlr <- function(data, num_CP, init = "even", prior_beta = "Gaussian", prior_ka
       for (i in 1:N){
         omega[i] = rpg.devroye(num = 1, h = 1, z = eta[i]) 
       }
+      # Update delta
+      delta = c(rep(-0.5, times = kappa), rep(0.5, times = N-kappa))
       # 2. Update beta 
       # Update HS prior parameters 
       if (prior_beta =="horseshoe"){
-        #xi_inv <- rgamma(n=1, shape = 1, rate = 1+1/tau_sq)
-        xi_inv <- rigamma(n=1, a = 1, b = 1+1/tau_sq)
-        xi <- 1/xi_inv
-        #tau_sq <- 1/rgamma(n=1, shape = 0.5*(p+1), rate =  xi_inv + 0.5*sum(beta^2 / lambda_sq))
-        tau_sq <- rigamma(n=1, a = 0.5*(p+1), b =  xi_inv + 0.5*sum(beta^2 / lambda_sq))
-        for (d in 1:p){
-          #nu[d] <- 1/rgamma(n=1, shape = 1, rate = 1+1/lambda_sq[d])
-          nu[d] <- rigamma(n=1, a = 1, b = 1+1/lambda_sq[d])
-          #lambda_sq[d] <- 1/rgamma(n=1, shape = 1, rate = 1/nu[d] + 0.5/tau_sq*beta[d]^2)
-          lambda_sq[d] <- rigamma(n=1, a = 1, b = 1/nu[d] + 0.5/tau_sq*beta[d]^2)
+        if(p <= N){ # Low dimensional 
+          #xi_inv <- rgamma(n=1, shape = 1, rate = 1+1/tau_sq)
+          xi_inv <- rigamma(n=1, a = 1, b = 1+1/tau_sq)
+          xi <- 1/xi_inv
+          #tau_sq <- 1/rgamma(n=1, shape = 0.5*(p+1), rate =  xi_inv + 0.5*sum(beta^2 / lambda_sq))
+          tau_sq <- rigamma(n=1, a = 0.5*(p+1), b =  xi_inv + 0.5*sum(beta^2 / lambda_sq))
+          for (d in 1:p){
+            #nu[d] <- 1/rgamma(n=1, shape = 1, rate = 1+1/lambda_sq[d])
+            nu[d] <- rigamma(n=1, a = 1, b = 1+1/lambda_sq[d])
+            #lambda_sq[d] <- 1/rgamma(n=1, shape = 1, rate = 1/nu[d] + 0.5/tau_sq*beta[d]^2)
+            lambda_sq[d] <- rigamma(n=1, a = 1, b = 1/nu[d] + 0.5/tau_sq*beta[d]^2)
+          }
+          Sigma0 = diag(lambda_sq*tau_sq, nrow = p, ncol = p)
+          Z <- matrix(rnorm(p), p, 1) # A p-vector of standard normals
+          U <- chol(crossprod(x = X, y = diag(omega) %*% X) + Sigma0) # Upper Cholesky factor of the inverse of V_j
+          beta <- chol2inv(U) %*% (t(X)%*%delta) + backsolve(U, Z)
+        }else if (p>N){ # High dimensional 
+          Phi = diag(sqrt(omega))%*%X
+          D = diag(1/(lambda_sq*tau_sq), nrow = p, ncol = p)
+          alpha_s = diag(sqrt(1/omega)) %*% delta
+          # Step 1. 
+          u = mvrnorm(n = 1, mu = rep(0, p), Sigma = D)
+          e = mvrnorm(n = 1, mu = rep(0, N), Sigma = diag(N))
+          # Step 2.
+          v = Phi%*%u + e
+          # Step 3.
+          U = chol(crossprod(x = t(Phi), y = D%*%t(Phi)) + diag(N))
+          w = chol2inv(U)%*%(alpha_s-v) # N by 1
+          # Step 4.
+          beta = u + D%*%t(Phi)%*%w 
         }
-        Sigma0 = diag(lambda_sq*tau_sq, nrow = p, ncol = p)
-        delta = c(rep(-0.5, times = kappa), rep(0.5, times = N-kappa))
-        Z <- matrix(rnorm(p), p, 1) # A p-vector of standard normals
-        U <- chol(crossprod(x = X, y = diag(omega) %*% X) + Sigma0) # Upper Cholesky factor of the inverse of V_j
-        beta <- chol2inv(U) %*% (t(X)%*%delta) + backsolve(U, Z)
       }else if (prior_beta == "Gaussian"){
-        delta = c(rep(-0.5, times = kappa), rep(0.5, times = N-kappa)) 
-        Z <- matrix(rnorm(p), p, 1) # A p-vector of standard normals
-        U <- chol(crossprod(x = X, y = diag(omega) %*% X) + V0inv) # Upper Cholesky factor of the inverse of V_j 
-        beta <- chol2inv(U) %*% (t(X)%*%delta + V0inv %*% m0) + backsolve(U, Z)
+        if (p <= N){ # Low dimensional 
+          Z <- matrix(rnorm(p), p, 1) # A p-vector of standard normals
+          U <- chol(crossprod(x = X, y = diag(omega) %*% X) + V0inv) # Upper Cholesky factor of the inverse of V_j 
+          beta <- chol2inv(U) %*% (t(X)%*%delta + V0inv %*% m0) + backsolve(U, Z)
+        }else if(p>N){# High dimensional 
+          # Implement the fast sampler from https://arxiv.org/abs/1506.04778
+          Phi = diag(sqrt(omega))%*%X
+          D = V0
+          alpha_s = diag(sqrt(1/omega)) %*% delta
+          # Step 1. 
+          u = mvrnorm(n = 1, mu = rep(0, p), Sigma = D)
+          e = mvrnorm(n = 1, mu = rep(0, N), Sigma = diag(N))
+          # Step 2.
+          v = Phi%*%u + e 
+          # Step 3.
+          U = chol(crossprod(x = t(Phi), y = D%*%t(Phi)) + diag(N))
+          w = chol2inv(U)%*%(alpha_s-v) # N by 1
+          # Step 4.
+          beta = u + D%*%t(Phi)%*%w 
+        }
       }
       # 3.Update P and Kappa
       Phi_exp <- exp(X %*% beta) 
@@ -492,7 +557,7 @@ bcmlr <- function(data, num_CP, init = "even", prior_beta = "Gaussian", prior_ka
     start = Sys.time()
     for (iter in 1:num_iter){
       # 1. Update samples
-      gs = GS_update(temper = tempering, beta, kappa, omega, tau_sq, xi, nu, lambda_sq, X_all, X, train_idx, holdout_idx, n, N, p, L, J, model_selection)
+      gs = GS_update(temper = tempering, beta, kappa, omega, tau_sq, xi, nu, lambda_sq, X_all, X, train_idx, holdout_idx, n, N, p, L, J,V0inv, V0, model_selection)
       beta = gs$beta
       kappa = gs$kappa
       omega = gs$omega
