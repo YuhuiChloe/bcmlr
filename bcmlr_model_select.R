@@ -1,5 +1,5 @@
 bcmlr_model_select <- function(data, init = "even", thinning = 5, prior_beta = "Gaussian", prior_kappa = "default", alpha_f = 0.1, threshold = 0.5, min_size = 30, 
-                               max_num_cp = 5, num_iter = 5000, num_warmup = 2500, print_progress = FALSE){
+                               max_num_cp = 5, num_iter = 5000, num_warmup = 2500, print_progress = FALSE, print_outputs = FALSE){
   if (!is.matrix(data)){
     stop("Please convert your data to a matrix. If you have factor variables, apply a dummification or one-hot encoding.")
   }
