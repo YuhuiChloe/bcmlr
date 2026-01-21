@@ -600,7 +600,7 @@ bcmlr <- function(data, num_CP, init = "even", prior_beta = "Gaussian", prior_ka
     }else{
       # Compute posterior mean coefficients
       out$Beta_mean = apply(out$Beta, c(2,3), mean)
-      out$P = apply(out$P, c(2,3), mean)
+      out$P_mean = apply(out$P, c(2,3), mean) 
       out$AUC = NULL # no need for AUC if we are not doing model selection
       out$init_cp = NULL
     }
