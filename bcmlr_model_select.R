@@ -32,5 +32,8 @@ bcmlr_model_select <- function(data, init = "even", thinning = 5, prior_beta = "
     out$num_cp_dist = rej # posterior distribution of the number of CPs
     out$probs_num_cp = probs 
   }
+  if (print_outputs){
+    cat(str(out))
+  }
   return(out)
 }
