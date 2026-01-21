@@ -87,6 +87,9 @@ bcmlr_PT <- function(data, num_iter = 5000, num_warmup = 2500, num_tune = 5000, 
     }
     end = Sys.time()
     close(pb) 
+    # Use posterior modes as changepoint estimates
+    cp = table(out$Kappa)
+    out$Kappa_mode = as.integer(names(cp)[which.max(cp)]) # posterior mode 
     ######### END of the for-loop 
     if (print_outputs){
       runTime = end - start
@@ -297,7 +300,6 @@ bcmlr_PT <- function(data, num_iter = 5000, num_warmup = 2500, num_tune = 5000, 
       out$Kappa = matrix(data = rep(0, times = (num_iter-num_warmup)*L), nrow = num_iter-num_warmup, ncol = L)
       out$Beta = array(data = rep(x = 0, times = (num_iter-num_warmup)*p*J), dim = c((num_iter-num_warmup), p, J))
       out$P = array(data = rep(x = 0, times = (num_iter-num_warmup)*N*J), dim = c((num_iter-num_warmup), N, J))
-      #out$AUC = matrix(0, nrow = num_iter-num_warmup, ncol = J-1)
       # a vector to store the frequency of a pair of samples being swapped at each index
       pair_swap = rep(0, times = num_temper-1)
       rej = rep(0, times = num_temper - 1)
@@ -311,6 +313,9 @@ bcmlr_PT <- function(data, num_iter = 5000, num_warmup = 2500, num_tune = 5000, 
       }
       for (iter in 1:num_iter){
         # 1. Update samples at all tempering powers
+        # Pre-run GS_parallel once in the parent process to initialize
+        # packages/compiled code and avoid intermittent fork errors in mclapply()
+        invisible(GS_parallel(1))
         # parallel computing:
         gs = mclapply(X = 1:num_temper, FUN = GS_parallel, mc.cores = detectCores())
         # store the results into the working/computation quantities: 
@@ -372,14 +377,20 @@ bcmlr_PT <- function(data, num_iter = 5000, num_warmup = 2500, num_tune = 5000, 
         close(pb)
         end = Sys.time() # end time 
       }
+      # Use posterior modes as changepoint estimates
+      cps = c()
+      for (l in 1:L){
+        cp = table(out$Kappa[,l])
+        kappa = as.integer(names(cp)[which.max(cp)])
+        cps = c(cps, kappa)
+      }
+      out$Kappa_mode = cps # posterior modes
       out$ave_rej = rej/num_iter # take the average rejection probabilities
       out$pair_acc = pair_swap/(num_iter/2) # average MH acceptance rates
       out$schedule = T.set #the optimal tempering schedule used for this algorithm 
       return(out)
     }
-    
     #################### Finding the optimal tempering schedule ###########################
-    
     cat("Finding the optimal tempering schedule......", "\n")
     # Initial tempering schedule with a user-specified length
     T.set = seq(from = 0.0001, to = 1, length = num_temper)
