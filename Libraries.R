@@ -2,6 +2,7 @@ library(BayesLogit) # for rpg()
 library(LearnBayes) # for computing inverse gamma: rigamma(), alternative to 1/rgamma()
 library(MASS) # for mvrnorm()
 library(parallel) # for parallel computing using mclapply() ---- Use this when you want to run bcmlr on independent data sets in parallel
+library(pbmcapply) # to track and visualize the progress of parallel version of vectorized R functions
 library(pdfCluster) # for computing Adjusted Rand Index
 library(pracma) # for computing the Hausdorff distance
 library(ecp) # The ecp packaeg includes E.divisive
