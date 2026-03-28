@@ -68,7 +68,7 @@ bcmlr <- function(data, num_CP, init = "even", prior_beta = "Gaussian", prior_ka
     }
   }else if (thinning == 1){ # if thinning = 1
     all_idx = seq_len(n)
-    holdout_idx = all_idx 
+    # holdout_idx = all_idx 
     train_idx = all_idx
     if (dim(X_all)[2] == 1){
       m = mean(X_all, na.rm = TRUE)
