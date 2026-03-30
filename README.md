@@ -26,10 +26,6 @@ The bcmlr function gives the options to
 - probs_num_cp: posterior probabilities of all possible numbers of changepoints (up to the length of max_cps). The number with the highest posterior probabilities is the number of changes bcmlr deem there to be. 
 
 # Steps for single/multiple changepoint detection. 
-- Download the PGDensity package
+- To implement bcmlr with parallel tempering, download the PGDensity package. 
 - Use the bcmlr function in bcmlr.R if the true number of changepoints is known. 
 - Use the bcmlr_model_select function in bcmlr_model_select.R if the true number of changepoints is unknown. 
-
-
-> [!IMPORTANT]
-> This repository is still under construction.
