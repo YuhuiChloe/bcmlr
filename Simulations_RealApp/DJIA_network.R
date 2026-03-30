@@ -52,7 +52,6 @@ head(net_stats)
 # PART 2. 
 # Fit the bcmlr method, visualize the results, and fit e.divisive on the same data. 
 
-
 #%%%%%%%%%%%#
 # Fit bcmlr #
 #%%%%%%%%%%%#
