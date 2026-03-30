@@ -1,3 +1,4 @@
+# PART 1. 
 # How CPDstergm authors implemented their real data applications on the DIJA data from the ecp package
 # https://github.com/allenkei/CPDstergm_demo/blob/main/experiment_real.R
 
@@ -46,6 +47,11 @@ for (i in seq_along(df)) {
 }
 head(net_stats)
 # sum(is.na(net_stats))
+
+
+# PART 2. 
+# Fit the bcmlr method, visualize the results, and fit e.divisive on the same data. 
+
 
 #%%%%%%%%%%%#
 # Fit bcmlr #
