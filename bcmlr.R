@@ -68,7 +68,7 @@ bcmlr <- function(data, num_CP, init = "even", prior_beta = "Gaussian", prior_ka
     }
   }else if (thinning == 1){ # if thinning = 1
     all_idx = seq_len(n)
-    holdout_idx = all_idx 
+    # holdout_idx = all_idx 
     train_idx = all_idx
     if (dim(X_all)[2] == 1){
       m = mean(X_all, na.rm = TRUE)
@@ -116,8 +116,8 @@ bcmlr <- function(data, num_CP, init = "even", prior_beta = "Gaussian", prior_ka
       xi = rigamma(n =1, a = 1, b = 1+1/tau_sq)
       xi_inv = 1/xi
       for (j in 1:(J-1)){
-       #tau_sq <- 1/rgamma(n=1, shape = 0.5*(p+1), rate = xi_inv + 0.5*sum(beta[,j]^2 / lambda_sq[,j])) 
-       tau_sq <- rigamma(n = 1, a = 0.5*(p+1), b = xi_inv + 0.5*sum(beta[,j]^2 / lambda_sq[,j]))
+        #tau_sq <- 1/rgamma(n=1, shape = 0.5*(p+1), rate = xi_inv + 0.5*sum(beta[,j]^2 / lambda_sq[,j])) 
+        tau_sq <- rigamma(n = 1, a = 0.5*(p+1), b = xi_inv + 0.5*sum(beta[,j]^2 / lambda_sq[,j]))
         for (d in 1:p){
           #nu[d,j] <- 1/rgamma(n=1, shape = 1, rate = 1+1/lambda_sq[d,j]^2)
           nu[d,j] <- rigamma(n=1, a = 1, b = 1+1/lambda_sq[d,j])
@@ -240,30 +240,38 @@ bcmlr <- function(data, num_CP, init = "even", prior_beta = "Gaussian", prior_ka
           kappa[j] <- sample(x=range, size=1, prob=prob_vec) # update kappa
         }
       }
-    }else if (is.function(prior_kappa)){
-      jt_pmf_kappa = prior_kappa(kappa) # Get joint PMF of the prior distribution of kappa
-      for(j in 1:(J-1)){
+    }else if (is.function(prior_kappa)){ # else if the user have a joint PMF for the kappas 
+      for(j in 1:(K-1)){
         if(j==1){
           range <- (1 + min_size):(kappa[j+1] - 1 - min_size)
           lr <- length(range)
           log_prob_vec_prop <- rep(0, lr)
           for(l in 1:lr){
+            kappa_prop = kappa 
+            kappa_prop[j] = range[l]
+            jt_pmf_kappa = prior_kappa(kappa_prop) 
             log_prob_vec_prop[l] <- temper*(sum(log(P[1:range[l],j])) + sum(log(P[(range[l]+1):kappa[j+1],j+1]))) + log(jt_pmf_kappa)
           }
           prob_vec <- exp(log_prob_vec_prop - logsumexp(log_prob_vec_prop))
         } else if(j==L){
-          range <- (kappa[j-1]+1 + min_size):(N - 1 - min_size)
+          range <- (kappa[j-1] + 1 + min_size):(Tt - 1 - min_size)
           lr <- length(range)
           log_prob_vec_prop <- rep(0, lr)
           for(l in 1:lr){
-            log_prob_vec_prop[l] <- temper*(sum(log(P[(kappa[j-1]+1):range[l],j])) + sum(log(P[(range[l]+1):N,j+1]))) + log(jt_pmf_kappa)
+            kappa_prop = kappa
+            kappa_prop[j] = range[l]
+            jt_pmf_kappa = prior_kappa(kappa_prop) 
+            log_prob_vec_prop[l] <- temper*(sum(log(P[(kappa[j-1]+1):range[l],j])) + sum(log(P[(range[l]+1):Tt,j+1]))) + log(jt_pmf_kappa)
           }
           prob_vec <- exp(log_prob_vec_prop - logsumexp(log_prob_vec_prop))
         } else{
-          range <- (kappa[j-1]+1 + min_size):(kappa[j+1]-1 - min_size)
+          range <- (kappa[j-1] + 1 + min_size):(kappa[j+1] - 1 - min_size) 
           lr <- length(range)
           log_prob_vec_prop <- rep(0, lr)
           for(l in 1:lr){
+            kappa_prop = kappa 
+            kappa_prop[j] = range[l] 
+            jt_pmf_kappa = prior_kappa(kappa_prop)
             log_prob_vec_prop[l] <- temper*(sum(log(P[(kappa[j-1]+1):range[l],j])) + sum(log(P[(range[l]+1):kappa[j+1],j+1]))) + log(jt_pmf_kappa)
           }
           prob_vec <- exp(log_prob_vec_prop - logsumexp(log_prob_vec_prop))
@@ -272,7 +280,7 @@ bcmlr <- function(data, num_CP, init = "even", prior_beta = "Gaussian", prior_ka
           kappa[j] <- sample(x=range, size=1, prob=prob_vec) # update kappa
         }
       }
-    }
+    } # End of the case if the user has a joint PMF of kappa
     # Update kappa in the scale of the entire series
     original_kappa = train_idx[kappa] 
     #### Compute AUC for model selection ####
@@ -364,7 +372,6 @@ bcmlr <- function(data, num_CP, init = "even", prior_beta = "Gaussian", prior_ka
     out$Kappa = rep(0, times = num_iter - num_warmup)
     out$AUC = rep(0, times = num_iter - num_warmup)
     # START of the for-loop #
-    start_time = Sys.time()
     if (print_progress){
       pb = txtProgressBar(min = 0, max = num_iter, style = 3)
     }
@@ -448,6 +455,7 @@ bcmlr <- function(data, num_CP, init = "even", prior_beta = "Gaussian", prior_ka
       }else if (is.function(prior_kappa)){
         jt_pmf_kappa = prior_kappa(kappa)
         for(l in 1:lr){
+          jt_pmf_kappa = prior_kappa(range[l])
           log_prob_vec_prop[l] = sum(log(1-P[1:range[l]])) + sum(log(P[(range[l]+1):N])) + log(jt_pmf_kappa)
         }
       }
@@ -600,7 +608,7 @@ bcmlr <- function(data, num_CP, init = "even", prior_beta = "Gaussian", prior_ka
     }else{
       # Compute posterior mean coefficients
       out$Beta_mean = apply(out$Beta, c(2,3), mean)
-      out$P_mean = apply(out$P, c(2,3), mean) 
+      out$P_mean = apply(out$P, c(2,3), mean)  
       out$AUC = NULL # no need for AUC if we are not doing model selection
       out$init_cp = NULL
     }
