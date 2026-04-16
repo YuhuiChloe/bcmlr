@@ -284,7 +284,7 @@ bcmlr <- function(data, num_CP, init = "even", prior_beta = "Gaussian", prior_ka
     # Update kappa in the scale of the entire series
     original_kappa = train_idx[kappa] 
     #### Compute AUC for model selection ####
-    if (model_selection){
+    if (model_selection  && (iter > num_warmup)){
       # "ratios" are the probabilities of a subject belonging to
       # class j+1 other than class j
       Phi_exp_all <- exp(X_all %*% beta) # Element-wise exponent of Phi matrix from supplement
@@ -467,7 +467,7 @@ bcmlr <- function(data, num_CP, init = "even", prior_beta = "Gaussian", prior_ka
       original_kappa = train_idx[kappa]
       # Update Y based on the kappa in the entire series
       Y = c(rep(0, times = original_kappa), rep(1, times = n - original_kappa))
-      if (model_selection){
+      if (model_selection  && (iter > num_warmup)){
         Y_auc = Y[seq_len(length(Y)) %% thinning == 0]
         # Update the matrix of probabilities of success based on the fitted coefficients
         Phi_exp_auc <- exp(X_auc %*% beta) 
