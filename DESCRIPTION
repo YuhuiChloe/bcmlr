@@ -1,0 +1,28 @@
+Package: bcmlr
+Type: Package
+Title: Generalized Bayesian Multiple Changepoint Analysis
+Version: 0.1.0.9000
+Authors@R: person("Yuhui", "Wang", role = c("aut", "cre"),
+    email = "87951710+YuhuiChloe@users.noreply.github.com")
+Description: Generalized Bayesian changepoint analysis for ordered vector-valued
+    observations using multinomial log loss, Polya-Gamma data augmentation,
+    Gaussian or horseshoe coefficient priors, and classification-based
+    selection of the number of changepoints. Provides posterior summaries that help interpret the nature of the detected changepoints.
+License: GPL-3
+Encoding: UTF-8
+Depends: R (>= 4.1.0)
+Imports:
+    BayesLogit,
+    ggplot2 (>= 3.4.0),
+    LearnBayes,
+    MASS,
+    pROC,
+    rlang,
+    stats,
+    utils
+Suggests:
+    ecp,
+    reticulate
+URL: https://github.com/YuhuiChloe/bcmlr
+BugReports: https://github.com/YuhuiChloe/bcmlr/issues
+Roxygen: list(markdown = TRUE)
