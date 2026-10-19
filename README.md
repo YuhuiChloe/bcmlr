@@ -35,6 +35,70 @@ require Python, `ergm`, `LearnBayes`, `MASS`, or `PGdensity`. `ecp` is optional 
 reconstructing the example networks or using its initializer; `reticulate` and
 Python `ruptures` are optional for `kcp` and `multirank` initialization.
 
+### Installation troubleshooting
+
+If `remotes::install_github()` fails with **HTTP error 401: Bad credentials**,
+R may be using an invalid or expired GitHub personal access token saved on
+your computer. Try either solution below.
+
+#### Option 1: Replace the saved token
+
+[Generate a new token in your own GitHub account](https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/managing-your-personal-access-tokens),
+then run:
+
+```r
+install.packages("gitcreds")  # Only if not already installed
+gitcreds::gitcreds_set()
+```
+
+Choose **Replace these credentials** and enter the new token when prompted.
+Then retry installation:
+
+```r
+remotes::install_github(
+  "YuhuiChloe/bcmlr",
+  dependencies = NA,
+  upgrade = "never"
+)
+```
+
+#### Option 2: Install from the public ZIP archive
+
+This method avoids using the saved GitHub credential:
+
+```r
+remotes::install_url(
+  "https://github.com/YuhuiChloe/bcmlr/archive/refs/heads/main.zip",
+  dependencies = NA,
+  upgrade = "never"
+)
+```
+
+GitHub generates this ZIP automatically from the `main` branch. R downloads
+and extracts it into temporary storage, then installs the package.
+No manual ZIP download is required.
+
+After either installation succeeds, load the package:
+
+```r
+library(bcmlr)
+```
+
+To check the installed package location and the current R session's
+temporary directory:
+
+```r
+# Installed package location
+find.package("bcmlr")
+
+# Temporary download directory
+tempdir()
+```
+
+Temporary installation files may already have been removed. The installed
+package remains available through `library(bcmlr)`.
+
+
 ## Load the DJIA example
 
 ```r
@@ -246,66 +310,3 @@ See `citation("bcmlr")`. Bibliographic publication details should be updated
 when available. The upstream repository had no license at the audited revision;
 a release license and data redistribution permissions remain to be confirmed.
 
-
-### Installation
-
-If `remotes::install_github()` fails with **HTTP error 401: Bad credentials**,
-R may be using an invalid or expired GitHub personal access token saved on
-your computer. Try either solution below.
-
-#### Option 1: Replace the saved token
-
-[Generate a new token in your own GitHub account](https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/managing-your-personal-access-tokens),
-then run:
-
-```r
-install.packages("gitcreds")  # Only if not already installed
-gitcreds::gitcreds_set()
-```
-
-Choose **Replace these credentials** and enter the new token when prompted.
-Then retry installation:
-
-```r
-remotes::install_github(
-  "YuhuiChloe/bcmlr",
-  dependencies = NA,
-  upgrade = "never"
-)
-```
-
-#### Option 2: Install from the public ZIP archive
-
-This method avoids using the saved GitHub credential:
-
-```r
-remotes::install_url(
-  "https://github.com/YuhuiChloe/bcmlr/archive/refs/heads/main.zip",
-  dependencies = NA,
-  upgrade = "never"
-)
-```
-
-GitHub generates this ZIP automatically from the `main` branch. R downloads
-and extracts it into temporary storage, then installs the package.
-No manual ZIP download is required.
-
-After either installation succeeds, load the package:
-
-```r
-library(bcmlr)
-```
-
-To check the installed package location and the current R session's
-temporary directory:
-
-```r
-# Installed package location
-find.package("bcmlr")
-
-# Temporary download directory
-tempdir()
-```
-
-Temporary installation files may already have been removed. The installed
-package remains available through `library(bcmlr)`.
