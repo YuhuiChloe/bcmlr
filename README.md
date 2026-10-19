@@ -14,26 +14,26 @@ original scripts are retained in `legacy/`, outside the installed package.
 
 ## Installation
 
-Install this reviewed development snapshot from its local directory:
+Install `bcmlr` directly from GitHub:
 
 ```r
-install.packages(c("remotes", "roxygen2", "testthat"))
-remotes::install_local("path/to/bcmlr", dependencies = NA)
+# Install remotes if needed
+if (!requireNamespace("remotes", quietly = TRUE)) {
+  install.packages("remotes")
+}
+
+# Install bcmlr and its required dependencies
+remotes::install_github(
+  "YuhuiChloe/bcmlr",
+  dependencies = NA,
+  upgrade = "never"
+)
+
+# Load the package
 library(bcmlr)
 ```
 
-After the package files have been committed and pushed to the repository:
-
-```r
-remotes::install_github("YuhuiChloe/bcmlr")
-library(bcmlr)
-```
-
-The existing upstream revision is a collection of scripts, so the second command
-requires the package update to be published first. Core installation does not
-require Python, `ergm`, `LearnBayes`, `MASS`, or `PGdensity`. `ecp` is optional for
-reconstructing the example networks or using its initializer; `reticulate` and
-Python `ruptures` are optional for `kcp` and `multirank` initialization.
+No manual download of the repository is required.
 
 ### Installation troubleshooting
 
