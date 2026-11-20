@@ -1,4 +1,8 @@
 export(bcmlr)
 export(bcmlr_model_select)
 export(plot_beta_diff_CIs)
+export(plot_changepoints)
+export(plot_histogram)
+export(plot_log_prob_diff)
+export(plot_netstats_cp_cis)
 importFrom(rlang,.data)
