@@ -19,10 +19,12 @@ Imports:
     pROC,
     rlang,
     stats,
-    utils
+    utils,
+    scales
 Suggests:
     ecp,
-    reticulate
+    reticulate,
+    patchwork
 URL: https://github.com/YuhuiChloe/bcmlr
 BugReports: https://github.com/YuhuiChloe/bcmlr/issues
 Roxygen: list(markdown = TRUE)
