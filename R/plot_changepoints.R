@@ -205,14 +205,21 @@ plot_netstats_cp_cis <- function(S, dates, kappa,
 #' draws as its first argument. All computations and plotting settings are
 #' delegated to that function.
 #' @inheritParams plot_netstats_cp_cis
+#' @param X Alias for S used in the bcmlr dissertation example. Supply only
+#'   one of X and S.
 #' @param ... Other arguments passed to [plot_netstats_cp_cis()], including
 #'   `other_cps`, `kappa_mode`, and `stat_names`.
 #' @returns The ggplot or patchwork object returned by [plot_netstats_cp_cis()].
 #' @examples
 #' S <- cbind(edges = 1:20, triangles = (1:20)^2)
 #' dates <- as.Date("2020-01-01") + 7 * (0:19)
-#' plot_changepoints(c(9, 10, 10, 11), S = S, dates = dates)
+#' plot_changepoints(c(9, 10, 10, 11), X = S, dates = dates)
 #' @export
-plot_changepoints <- function(kappa, S, dates, ...) {
+plot_changepoints <- function(kappa, S = NULL, dates, X = NULL, ...) {
+  if (!is.null(X)) {
+    if (!is.null(S)) stop("Supply only one of X and S.")
+    S <- X
+  }
+  if (is.null(S)) stop("Supply the observed series using X or S.")
   plot_netstats_cp_cis(S = S, dates = dates, kappa = kappa, ...)
 }
